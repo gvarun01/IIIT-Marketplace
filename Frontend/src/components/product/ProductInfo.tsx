@@ -7,32 +7,35 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const addToCart = async (itemId: string, quantity: number) => {
-  const token = Cookies.get("accessToken");
-  const response = await axios.post("/api/cart", 
-    { itemId, quantity },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  return response.data;
-};
 
-interface ProductInfoProps {
-  __id: string;
-  name: string;
-  price: number;
-  description: string;
-  seller: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
-  rating: number;
+const addToCart = async (itemId: string, quantity: number) => {
+  const token = Cookies.get("accessToken")
+  const response = await axios.post(
+    "/api/cart",
+    { itemId, quantity },
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  return response.data
 }
 
-const truncateText = (text: string, maxLength: number = 600) => {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + ' .........';
-};
+interface ProductInfoProps {
+  __id: string
+  name: string
+  price: number
+  description: string
+  seller: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+  rating: number
+  onAddToCart: () => void // New prop for cart animation
+}
+
+const truncateText = (text: string, maxLength = 600) => {
+  if (text.length <= maxLength) return text
+  return text.slice(0, maxLength) + " ........."
+}
 
 export const ProductInfo = ({
   __id,
@@ -41,35 +44,37 @@ export const ProductInfo = ({
   description,
   seller,
   rating,
+  onAddToCart, // New prop
 }: ProductInfoProps) => {
-  const [quantity, setQuantity] = useState(1);
-  const [isAdding, setIsAdding] = useState(false);
+  const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
 
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   const addToCartMutation = useMutation({
     mutationFn: () => addToCart(__id, quantity),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["cart"] })
       toast({
         title: "Success!",
-        description: `${quantity} ${quantity === 1 ? 'item' : 'items'} added to your cart`,
-      });
+        description: `${quantity} ${quantity === 1 ? "item" : "items"} added to your cart`,
+      })
+      onAddToCart() // Trigger cart animation
     },
     onError: (error) => {
       toast({
         title: "Error",
         description: "Failed to add to cart",
         variant: "destructive",
-      });
+      })
     },
-  });
+  })
 
   const handleAddToCart = () => {
-    setIsAdding(true);
-    addToCartMutation.mutate();
-    setTimeout(() => setIsAdding(false), 1000);
-  };
+    setIsAdding(true)
+    addToCartMutation.mutate()
+    setTimeout(() => setIsAdding(false), 1000)
+  }
 
   return (
     <div className="h-full flex flex-col justify-between space-y-8 p-6 bg-white rounded-xl shadow-sm">
@@ -139,4 +144,8 @@ export const ProductInfo = ({
       </div>
     </div>
   );
-};
+
+
+  // ... rest of the component remains the same
+}
+

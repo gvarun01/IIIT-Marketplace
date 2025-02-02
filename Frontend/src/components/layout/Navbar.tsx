@@ -1,29 +1,19 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { 
-  ShoppingBag, 
-  Truck, 
-  Headset, 
-  Search, 
-  User, 
-  Menu, 
-  X, 
-  LogIn, 
-  UserPlus, 
-  PlusSquare 
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
-import axios from "axios";
-import { useDebounce } from "@/hooks/use-debounce";
+import { useState, useEffect, useRef } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { ShoppingBag, Truck, Headset, Search, User, Menu, X, PlusSquare } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { cn } from "@/lib/utils"
+import axios from "axios"
+import { useDebounce } from "@/hooks/use-debounce"
+import { useToast } from "@/components/ui/use-toast"
+import type React from "react"
 
 interface SearchResult {
-  _id: string;
-  name: string;
-  price: number;
-  images: string[];
+  _id: string
+  name: string
+  price: number
+  images: string[]
 }
 
 const useScrollDirection = () => {
@@ -50,11 +40,69 @@ const useScrollDirection = () => {
   return scrollDirection
 }
 
-export const Navbar = () => {
+export const Navbar = ({ isCartAnimating }: { isCartAnimating: boolean }) => {
   const [isSearchVisible, setIsSearchVisible] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [cartItemCount, setCartItemCount] = useState(0)
   const scrollDirection = useScrollDirection()
+  const profileDropdownRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const { toast } = useToast()
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false)
+      }
+    }
+
+    if (showProfileDropdown) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showProfileDropdown])
+
+  useEffect(() => {
+    const fetchCartItemCount = async () => {
+      try {
+        const response = await axios.get("/api/cart/count")
+        setCartItemCount(response.data.count)
+      } catch (error) {
+        console.error("Error fetching cart item count:", error)
+      }
+    }
+
+    fetchCartItemCount()
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/users/logout", {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Logged out successfully",
+          description: "You have been logged out of your account.",
+        })
+        navigate("/login")
+      } else {
+        throw new Error("Logout failed")
+      }
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast({
+        title: "Logout failed",
+        description: "An error occurred while logging out. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <nav
@@ -66,9 +114,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-2xl font-extrabold">
-            <span className="bg-gradient-to-r from-[#2A363B] to-[#435055] bg-clip-text text-transparent">
-              IIIT
-            </span>
+            <span className="bg-gradient-to-r from-[#2A363B] to-[#435055] bg-clip-text text-transparent">IIIT</span>
             <span className="text-[#2A363B]">Market</span>
           </Link>
 
@@ -102,11 +148,54 @@ export const Navbar = () => {
               <Search className="h-5 w-5" />
             </Button>
 
-            <NavIconLink to="/cart" icon={<ShoppingBag className="h-5 w-5" />} />
-            
-            {/* Profile Icon with Dropdown */}
-            <NavIconLink to="/profile" icon={<User className="h-5 w-5" />} />
+            <div className="relative">
+              <NavIconLink
+                to="/cart"
+                icon={
+                  <div className="relative">
+                    <ShoppingBag
+                      className={cn(
+                        "h-5 w-5 transition-all duration-300 ease-in-out",
+                        isCartAnimating && "animate-wiggle text-[#99B898] scale-125",
+                      )}
+                    />
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {cartItemCount}
+                      </span>
+                    )}
+                  </div>
+                }
+              />
+            </div>
 
+            {/* Profile Icon with Dropdown */}
+            <div className="relative" ref={profileDropdownRef}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-[#2A363B] hover:text-[#99B898] transition-colors duration-200"
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+              >
+                <User className="h-5 w-5" />
+              </Button>
+              {showProfileDropdown && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-50">
+                  <Link
+                    to="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-[#F8E5D5] transition-colors duration-200"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#F8E5D5] transition-colors duration-200"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Mobile Menu */}
             <div className="md:hidden">
@@ -147,27 +236,21 @@ export const Navbar = () => {
 }
 
 const NavLink = ({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <Link 
-    to={to} 
-    className="flex items-center gap-2 text-[#2A363B] hover:text-[#99B898] transition-colors duration-200"
-  >
+  <Link to={to} className="flex items-center gap-2 text-[#2A363B] hover:text-[#99B898] transition-colors duration-200">
     {icon}
     <span className="font-medium">{children}</span>
   </Link>
 )
 
 const NavIconLink = ({ to, icon }: { to: string; icon: React.ReactNode }) => (
-  <Link 
-    to={to} 
-    className="p-2 text-[#2A363B] hover:bg-[#F8E5D5] rounded-full transition-colors duration-200"
-  >
+  <Link to={to} className="p-2 text-[#2A363B] hover:text-[#99B898] transition-colors duration-200">
     {icon}
   </Link>
 )
 
 const MobileNavLink = ({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <Link 
-    to={to} 
+  <Link
+    to={to}
     className="flex items-center gap-3 p-3 text-[#2A363B] hover:bg-[#F8E5D5] rounded-md transition-colors duration-200"
   >
     {icon}
@@ -175,51 +258,52 @@ const MobileNavLink = ({ to, icon, children }: { to: string; icon: React.ReactNo
   </Link>
 )
 
-
 const SearchBar = ({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) => {
-  const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const debouncedSearch = useDebounce(searchTerm, 300);
+  const navigate = useNavigate()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [results, setResults] = useState<SearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const debouncedSearch = useDebounce(searchTerm, 300)
 
   useEffect(() => {
     const searchItems = async () => {
       if (debouncedSearch.length < 2) {
-        setResults([]);
-        return;
+        setResults([])
+        return
       }
 
-      setIsSearching(true);
+      setIsSearching(true)
       try {
-        const response = await axios.get(`/api/items?name=${debouncedSearch}&limit=5`);
-        setResults(response.data.data);
+        const response = await axios.get(`/api/items?name=${debouncedSearch}&limit=5`)
+        setResults(response.data.data)
       } catch (error) {
-        console.error("Search failed:", error);
+        console.error("Search failed:", error)
       } finally {
-        setIsSearching(false);
+        setIsSearching(false)
       }
-    };
+    }
 
-    searchItems();
-  }, [debouncedSearch]);
+    searchItems()
+  }, [debouncedSearch])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      navigate(`/shop?search=${searchTerm}`);
-      setSearchTerm("");
-      setResults([]);
-      onClose();
+      navigate(`/shop?search=${searchTerm}`)
+      setSearchTerm("")
+      setResults([])
+      onClose()
     }
-  };
+  }
 
   return (
-    <div className={cn(
-      "absolute inset-x-0 top-full left-0 bg-[#FDF8F3] p-4 md:relative md:inset-auto md:p-0 md:bg-transparent transition-all duration-200 ease-in-out",
-      isVisible
-        ? "opacity-100 translate-y-0"
-        : "opacity-0 -translate-y-2 pointer-events-none md:opacity-100 md:translate-y-0 md:pointer-events-auto"
-    )}>
+    <div
+      className={cn(
+        "absolute inset-x-0 top-full left-0 bg-[#FDF8F3] p-4 md:relative md:inset-auto md:p-0 md:bg-transparent transition-all duration-200 ease-in-out",
+        isVisible
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 -translate-y-2 pointer-events-none md:opacity-100 md:translate-y-0 md:pointer-events-auto",
+      )}
+    >
       <div className="relative flex-1 max-w-full mx-auto md:mx-0">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#2A363B]/50 h-4 w-4" />
         <input
@@ -240,15 +324,15 @@ const SearchBar = ({ isVisible, onClose }: { isVisible: boolean; onClose: () => 
                 <div
                   key={item._id}
                   onClick={() => {
-                    navigate(`/product/${item._id}`);
-                    setSearchTerm("");
-                    setResults([]);
-                    onClose();
+                    navigate(`/product/${item._id}`)
+                    setSearchTerm("")
+                    setResults([])
+                    onClose()
                   }}
-                  className="flex items-center gap-3 p-3 hover:bg-[#F8E5D5] cursor-pointer"
+                  className="flex items-center gap-3 p-3 hover:bg-[#F8E5D5] cursor-pointer transition-colors duration-200"
                 >
-                  <img 
-                    src={item.images[0]} 
+                  <img
+                    src={item.images[0] || "/placeholder.svg"}
                     alt={item.name}
                     className="w-12 h-12 object-cover rounded"
                   />
@@ -274,5 +358,6 @@ const SearchBar = ({ isVisible, onClose }: { isVisible: boolean; onClose: () => 
         )}
       </div>
     </div>
-  );
-};
+  )
+}
+

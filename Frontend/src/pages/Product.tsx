@@ -1,27 +1,34 @@
-import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { ProductGallery } from "@/components/product/ProductGallery";
-import { ProductInfo } from "@/components/product/ProductInfo";
-import { ProductReviews } from "@/components/product/ProductReviews";
-import { Item } from "@/types/item";
-import axios from "axios";
-import { ChatButton } from "@/components/chat/ChatButton";
-import { Loader2 } from "lucide-react";
+import { useState } from "react"
+import { useParams } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
+import { Navbar } from "@/components/layout/Navbar"
+import { Footer } from "@/components/layout/Footer"
+import { ProductGallery } from "@/components/product/ProductGallery"
+import { ProductInfo } from "@/components/product/ProductInfo"
+import { ProductReviews } from "@/components/product/ProductReviews"
+import type { Item } from "@/types/item"
+import axios from "axios"
+import { ChatButton } from "@/components/chat/ChatButton"
+import { Loader2 } from "lucide-react"
 
 const fetchProduct = async (id: string): Promise<Item> => {
-  const response = await axios.get(`/api/items/${id}`);
-  console.log("Product data:", response.data.data);
-  return response.data.data;
-};
+  const response = await axios.get(`/api/items/${id}`)
+  console.log("Product data:", response.data.data)
+  return response.data.data
+}
 
 const Product = () => {
-  const { id } = useParams();
+  const { id } = useParams()
+  const [isCartAnimating, setIsCartAnimating] = useState(false)
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: () => fetchProduct(id!),
-  });
+  })
+
+  const handleAddToCart = () => {
+    setIsCartAnimating(true)
+    setTimeout(() => setIsCartAnimating(false), 1000)
+  }
 
   if (isLoading)
     return (
@@ -31,7 +38,7 @@ const Product = () => {
           <span className="font-medium">Loading product...</span>
         </div>
       </div>
-    );
+    )
 
   if (!product)
     return (
@@ -41,14 +48,14 @@ const Product = () => {
           <p className="text-gray-600">The product you're looking for doesn't exist.</p>
         </div>
       </div>
-    );
+    )
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+      <Navbar isCartAnimating={isCartAnimating} />
       <main className="flex-grow container mx-auto px-4 py-8 space-y-8">
         <ChatButton apiKey="AIzaSyA37unXfqTDlSOdi84mtNeYoeDHR2yWNQM" />
-        
+
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <ProductGallery images={product.images} />
@@ -65,6 +72,7 @@ const Product = () => {
               lastName: product.sellerId.lastName,
             }}
             rating={product.averageRating}
+            onAddToCart={handleAddToCart}
           />
         </div>
 
@@ -74,15 +82,13 @@ const Product = () => {
         </div>
 
         <div className="bg-white p-8 rounded-xl shadow-sm">
-        <ProductReviews 
-            productId={product._id}
-            reviews={product.reviews}
-          />
+          <ProductReviews productId={product._id} reviews={product.reviews} />
         </div>
       </main>
       <Footer />
     </div>
-  );
-};
+  )
+}
 
-export default Product;
+export default Product
+
