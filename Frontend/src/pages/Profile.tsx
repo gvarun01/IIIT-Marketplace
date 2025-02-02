@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { ShoppingBag, List, Mail, Phone, Calendar } from "lucide-react"
+import { ShoppingBag, List, Mail, Phone, Calendar, Upload } from "lucide-react"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
 import { toast } from "@/hooks/use-toast"
@@ -15,11 +15,15 @@ import type { User } from "@/types/user"
 import type { Order } from "@/types/order"
 import { ChatButton } from "@/components/chat/ChatButton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import type React from "react" // Added import for React
 
 const getOTP = (transactionId: string): string | null => {
   const otps = JSON.parse(localStorage.getItem("orderOTPs") || "{}")
   return otps[transactionId] || null
 }
+
+const DEFAULT_AVATAR = "https://img.freepik.com/free-psd/3d-render-avatar-character_23-2150611701.jpg" // Replace with your default avatar path
 
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null)
@@ -33,6 +37,8 @@ const Profile = () => {
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState(DEFAULT_AVATAR)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -44,6 +50,7 @@ const Profile = () => {
           },
         })
         setUser(response.data.data)
+        setAvatarUrl(response.data.data.avatar || DEFAULT_AVATAR)
       } catch (error) {
         console.error(error)
         toast({
@@ -187,20 +194,86 @@ const Profile = () => {
     }
   }
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const formData = new FormData()
+      formData.append("avatar", file)
+
+      console.log("Uploading avatar...")
+      console.log("File:", file)
+
+      try {
+        const token = Cookies.get("accessToken")
+        const response = await axios.put("/api/users/avatar", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        console.log(response.data)
+        setAvatarUrl(response.data.data.avatar)
+        toast({
+          title: "Success",
+          description: "Avatar updated successfully",
+        })
+      } catch (error) {
+        console.error(error)
+        toast({
+          title: "Error",
+          description: "Failed to update avatar",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
   return (
     <>
       <Navbar isCartAnimating={false} />
       <main className="flex-grow">
         <ChatButton apiKey="AIzaSyA37unXfqTDlSOdi84mtNeYoeDHR2yWNQM" />
-        <div className="min-h-screen bg-[#FDF8F3] py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gradient-to-b from-[#FDF8F3] to-[#F8E5D5] py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto space-y-8">
-            <Card className="shadow-lg border border-[#E8B4A2]/20">
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-3xl font-bold tracking-tight text-center text-[#2A363B]">Profile</CardTitle>
                 <CardDescription className="text-center">Manage your account information</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
+                  <div className="flex flex-col items-center space-y-4">
+                    <Avatar
+                      className="w-32 h-32 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={handleAvatarClick}
+                    >
+                      <AvatarImage src={avatarUrl} alt="User avatar" />
+                      <AvatarFallback>
+                        {user?.firstName?.[0]}
+                        {user?.lastName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleAvatarChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-2"
+                      onClick={handleAvatarClick}
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Change Avatar</span>
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
@@ -209,7 +282,7 @@ const Profile = () => {
                         value={tempUser?.firstName ?? ""}
                         readOnly={!isEditing}
                         onChange={handleChange}
-                        className="bg-white border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
+                        className="bg-white/50 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -219,7 +292,7 @@ const Profile = () => {
                         value={tempUser?.lastName ?? ""}
                         readOnly={!isEditing}
                         onChange={handleChange}
-                        className="bg-white border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
+                        className="bg-white/50 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -229,7 +302,7 @@ const Profile = () => {
                           id="email"
                           value={tempUser?.email ?? ""}
                           readOnly={true}
-                          className="bg-white pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
+                          className="bg-white/50 pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                         />
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#4A5859]" />
                       </div>
@@ -242,7 +315,7 @@ const Profile = () => {
                           value={tempUser?.contactNumber ?? ""}
                           readOnly={!isEditing}
                           onChange={handleChange}
-                          className="bg-white pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
+                          className="bg-white/50 pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                         />
                         <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#4A5859]" />
                       </div>
@@ -256,7 +329,7 @@ const Profile = () => {
                           value={tempUser?.age ?? ""}
                           readOnly={!isEditing}
                           onChange={handleChange}
-                          className="bg-white pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
+                          className="bg-white/50 pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                         />
                         <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#4A5859]" />
                       </div>
@@ -316,7 +389,7 @@ const Profile = () => {
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg border border-[#E8B4A2]/20">
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold tracking-tight text-[#2A363B]">Order History</CardTitle>
                 <CardDescription>View your buying and selling history</CardDescription>
@@ -351,7 +424,7 @@ const Profile = () => {
                       ) : (
                         <div className="space-y-4">
                           {buyerOrders.map((order) => (
-                            <Card key={order._id} className="border border-[#E8B4A2]/20">
+                            <Card key={order._id} className="border-0 bg-white/50 backdrop-blur-sm">
                               <CardContent className="p-4">
                                 <div className="space-y-3">
                                   <div className="flex justify-between items-start">
@@ -432,7 +505,7 @@ const Profile = () => {
                       ) : (
                         <div className="space-y-4">
                           {sellerOrders.map((order) => (
-                            <Card key={order.transactionId} className="border border-[#E8B4A2]/20">
+                            <Card key={order.transactionId} className="border-0 bg-white/50 backdrop-blur-sm">
                               <CardContent className="p-4">
                                 <div className="flex justify-between items-center">
                                   <div>

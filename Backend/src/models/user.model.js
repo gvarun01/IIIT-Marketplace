@@ -41,6 +41,11 @@ const UserSchema = new mongoose.Schema(
       required: [true, "Password is required"],
     }, // Hashed password
 
+    avatar: {
+      type: String,
+      default: null,
+    }, // URL of the user's avatar
+
     refreshToken: {
       type: String,
       default: null,

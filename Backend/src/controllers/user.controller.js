@@ -243,10 +243,17 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User profile updated successfully"));
 });
 
+// Update user avatar
+// /api/users/avatar (PUT)
 const updateUserAvatar = asyncHandler(async (req, res) => {
+
+  console.log("In Update Avatar Section with id: ",req.user._id);
+  console.log(req.file);
   const avatarPath = req.file?.path;
+  console.log(avatarPath);
   const avatar = await uploadOnCloudinary(avatarPath);
 
+  console.log(avatar);
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {

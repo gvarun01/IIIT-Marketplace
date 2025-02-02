@@ -25,7 +25,7 @@ router.route("/logout").post(verifyAccessToken, logoutUser);
 router.route("/update-password").put(verifyAccessToken, changePassword);
 router.route("/me").get(verifyAccessToken, getUserProfile);
 router.route("/me").put(verifyAccessToken, updateUserProfile);
-router.route("/me-avatar").put(verifyAccessToken, updateUserAvatar);
+router.route("/avatar").put(verifyAccessToken,upload.single('avatar'), updateUserAvatar);
 router.route("/me").delete(verifyAccessToken, deleteUser);
 router.route("/:id").get(verifyAccessToken, getSellerProfile);
 
