@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       index: true,
       trim: true,
-      match: /^[a-zA-Z0-9._%+-]+@(students|research)\.iiit\.ac\.in$/,
+      match: /^[a-zA-Z0-9._%+-]+@(students|research|'')\.iiit\.ac\.in$/,
     }, // Only IIIT emails allowed
 
 

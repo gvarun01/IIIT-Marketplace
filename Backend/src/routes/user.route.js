@@ -9,6 +9,7 @@ import {
   updateUserAvatar,
   deleteUser,
   getSellerProfile,
+  changePassword,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyAccessToken } from "../middlewares/auth.middleware.js";
@@ -21,6 +22,7 @@ router.route("/refresh-token").get(refreshAccessToken);
 
 // protected routes
 router.route("/logout").post(verifyAccessToken, logoutUser);
+router.route("/update-password").put(verifyAccessToken, changePassword);
 router.route("/me").get(verifyAccessToken, getUserProfile);
 router.route("/me").put(verifyAccessToken, updateUserProfile);
 router.route("/me-avatar").put(verifyAccessToken, updateUserAvatar);
