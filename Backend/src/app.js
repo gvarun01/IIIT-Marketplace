@@ -1,12 +1,13 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import dotenv from "dotenv";
 
 const app = express();
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:8080', // Your frontend URL
+    origin: process.env.FRONTEND_URL, // Your frontend URL
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
