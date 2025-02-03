@@ -35,41 +35,43 @@ const createItem = asyncHandler(async (req, res) => {
 });
 
 const getAllItems = asyncHandler(async (req, res) => {
-  const page = parseInt(req.query.page) || 1; // Default to page 1
-  const limit = parseInt(req.query.limit) || 5; // Default to 5 items per page
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5;
   const skip = (page - 1) * limit;
 
-  const filters = req.query; // Example: ?category=electronics&price=100
-  delete filters.page; // Remove pagination params from filters
+  const filters = { ...req.query };
+  delete filters.page;
   delete filters.limit;
 
-   // Handle name search
-   if (filters.name) {
+  // Handle multiple categories
+  if (filters.categories) {
+    const categoriesArray = filters.categories.split(',');
+    filters.category = { $in: categoriesArray };
+    delete filters.categories;
+  }
+
+  // Handle name search
+  if (filters.name) {
     filters.name = { 
       $regex: filters.name, 
-      $options: 'i'  // case-insensitive
+      $options: 'i'
     };
   }
 
   let sortOptions = {};
   
-  // Extract sort from filters and remove it
   if (filters.sort) {
     const sortField = filters.sort;
-    delete filters.sort;  // Remove sort from filters
+    delete filters.sort;
 
-    // Convert sort parameter to MongoDB sort options
     if (sortField.startsWith('-')) {
       sortOptions[sortField.substring(1)] = -1;
     } else {
       sortOptions[sortField] = 1;
     }
   } else {
-    // Default sort by newest
     sortOptions.createdAt = -1;
   }
-
-  console.log("Fetching all items with filters:", filters, "sort:", sortOptions, "page:", page, "limit:", limit);
 
   const items = await Item.find(filters)
     .sort(sortOptions)
@@ -87,6 +89,7 @@ const getAllItems = asyncHandler(async (req, res) => {
     currentPage: page,
   });
 });
+
 
 const getItemById = asyncHandler(async (req, res) => {
   const { id } = req.params;

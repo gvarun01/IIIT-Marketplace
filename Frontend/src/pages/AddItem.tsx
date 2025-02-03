@@ -187,7 +187,7 @@ const AddItem = () => {
 
   return (
     <>
-      <Navbar />
+      <Navbar isCartAnimating={false} />
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#FDF8F3] to-white">
         <main className="flex-grow container mx-auto px-4 py-8">
           <Card className="max-w-3xl mx-auto p-8 bg-white/80 backdrop-blur-sm border border-[#E8B4A2]/20 shadow-lg shadow-[#99B898]/5">

@@ -1,6 +1,8 @@
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { ProductCard } from "@/components/product/ProductCard";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from 'react-router-dom';
+import axios from "axios";
+import { Item } from "@/types/item";
+import { Filter, SlidersHorizontal, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -16,11 +18,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Filter, SlidersHorizontal } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import { Item } from "@/types/item";
-import axios from "axios";
-import { useSearchParams } from 'react-router-dom';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { ProductCard } from "@/components/product/ProductCard";
 import { ChatButton } from "@/components/chat/ChatButton";
 
 interface PaginationState {
@@ -33,7 +35,7 @@ const Shop = () => {
   const [searchParams] = useSearchParams();
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState<string>("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("");
   const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 1,
@@ -54,6 +56,16 @@ const Shop = () => {
     "Other",
   ];
 
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(c => c !== category);
+      }
+      return [...prev, category];
+    });
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  };
+
   const fetchItems = useCallback(
     async (page: number) => {
       try {
@@ -61,7 +73,7 @@ const Shop = () => {
         const response = await axios.get('/api/items', {
           params: {
             ...(searchTerm && { name: searchTerm }),
-            ...(category && category !== "all" && { category }),
+            ...(selectedCategories.length > 0 && { categories: selectedCategories.join(',') }),
             ...(sortBy && sortBy !== "default" && {
               sort: sortBy === "price-low" 
                 ? "price" 
@@ -69,14 +81,14 @@ const Shop = () => {
                 ? "-price" 
                 : "-averageRating"
             }),
-            page: page,
-            limit: 5
+            page,
+            limit: 9
           }
         });
         
         setItems(response.data.data);
         setPagination({
-          currentPage: page,
+          currentPage: response.data.currentPage,
           totalPages: response.data.totalPages,
           totalItems: response.data.totalItems,
         });
@@ -86,21 +98,15 @@ const Shop = () => {
         setIsLoading(false);
       }
     },
-    [category, sortBy, searchTerm]
+    [selectedCategories, sortBy, searchTerm]
   );
 
   useEffect(() => {
-    fetchItems(1);
-  }, [category, sortBy, fetchItems]);
-
-  const handleCategoryChange = (value: string) => {
-    setCategory(value);
-    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to first page on category change
-  };
+    fetchItems(pagination.currentPage);
+  }, [selectedCategories, sortBy, fetchItems, pagination.currentPage]);
 
   const handlePageChange = (page: number) => {
     setPagination(prev => ({ ...prev, currentPage: page }));
-    fetchItems(page);
   };
 
   return (
@@ -110,23 +116,27 @@ const Shop = () => {
         <ChatButton apiKey="AIzaSyA37unXfqTDlSOdi84mtNeYoeDHR2yWNQM"/>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h1 className="text-4xl font-bold text-[#2A363B]">Browse Items</h1>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Select onValueChange={handleCategoryChange} value={category}>
-              <SelectTrigger className="w-[180px] bg-white border-[#E8B4A2]/20 text-[#2A363B]">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          
+          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <Button
+                  key={cat}
+                  variant={selectedCategories.includes(cat) ? "default" : "outline"}
+                  className={`px-4 py-2 rounded-full text-sm ${
+                    selectedCategories.includes(cat)
+                      ? "bg-[#99B898] hover:bg-[#7a9479] text-white"
+                      : "border-[#99B898] text-[#99B898] hover:bg-[#99B898]/10"
+                  }`}
+                  onClick={() => handleCategorySelect(cat)}
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
 
             <Select onValueChange={setSortBy} value={sortBy}>
-              <SelectTrigger className="w-[180px] bg-white border-[#E8B4A2]/20 text-[#2A363B]">
+              <SelectTrigger className="w-[180px] bg-white border-[#E8B4A2]/20 text-[#2A363B] rounded-full">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -138,6 +148,26 @@ const Shop = () => {
             </Select>
           </div>
         </div>
+
+        {selectedCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {selectedCategories.map((cat) => (
+              <Badge
+                key={cat}
+                variant="secondary"
+                className="px-3 py-1 bg-[#99B898]/20 text-[#2A363B] rounded-full text-sm flex items-center gap-1"
+              >
+                {cat}
+                <button
+                  className="ml-1 hover:text-[#99B898]"
+                  onClick={() => handleCategorySelect(cat)}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {items.map((item) => (
