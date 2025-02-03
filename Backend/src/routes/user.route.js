@@ -10,6 +10,8 @@ import {
   deleteUser,
   getSellerProfile,
   changePassword,
+  validateCasTicket,
+  casLogin,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyAccessToken } from "../middlewares/auth.middleware.js";
@@ -17,6 +19,8 @@ const router = Router();
 
 // routes declaration
 router.route("/register").post(registerUser);
+router.route("/validate-cas").post(validateCasTicket);
+router.route("/cas-login").post(casLogin);
 router.route("/login").post(loginUser);
 router.route("/refresh-token").get(refreshAccessToken);
 

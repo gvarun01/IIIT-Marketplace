@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,153 +15,192 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import axios from "axios";
-import { RegisterUser } from "@/types/user";
-import { useMutation } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 
-const registerUser = async (userData: RegisterUser) => {
-  const formData = new FormData();
-
-  // Append user data to FormData
-  Object.entries(userData).forEach(([key, value]) => {
-    formData.append(key, value.toString());
-  });
-
-  console.log("Form data: ",formData, "User data: ", userData);
-
-  const response = await axios.post("/api/users/register", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
-  return response.data;
-};
+const CAS_LOGIN_URL = "https://login.iiit.ac.in/cas/login";
+const SERVICE_URL = `${window.location.origin}/register/callback`;
+const FORM_DATA_KEY = "registrationFormData";
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    age: 0,
-    contactNumber: "",
+  const [formData, setFormData] = useState(() => {
+    // Try to load saved form data from sessionStorage
+    const savedData = sessionStorage.getItem(FORM_DATA_KEY);
+    return savedData ? JSON.parse(savedData) : {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      age: 0,
+      contactNumber: "",
+    };
   });
 
-  const registerMutation = useMutation({
-    mutationFn: registerUser,
-    onSuccess: () => {
-      toast({
-        title: "Registration successful",
-        description: "Please login to continue",
-      });
-      navigate("/login");
-    },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast({
-        title: "Registration failed",
-        description: error.response?.data?.message || "Something went wrong",
-        variant: "destructive",
-      });
-    },
-  });
+  useEffect(() => {
+    // Save form data to sessionStorage whenever it changes
+    sessionStorage.setItem(FORM_DATA_KEY, JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    const validateAndRegister = async (ticket: string) => {
+      try {
+        setIsLoading(true);
+        
+        // Load saved form data
+        const savedFormData = sessionStorage.getItem(FORM_DATA_KEY);
+        if (!savedFormData) {
+          toast({
+            title: "Registration failed",
+            description: "Form data not found. Please try registering again.",
+            variant: "destructive",
+          });
+          navigate("/register");
+          return;
+        }
+
+        const formDataObj = JSON.parse(savedFormData);
+        
+        // First validate the CAS ticket
+        const validationResponse = await axios.post("/api/users/validate-cas", {
+          ticket,
+          service: SERVICE_URL
+        });
+        
+        const { email: casEmail } = validationResponse.data;
+        
+        // Check if the email matches
+        if (casEmail !== formDataObj.email) {
+          toast({
+            title: "Verification failed",
+            description: "The email used for registration doesn't match your IIIT email",
+            variant: "destructive",
+          });
+          navigate("/register");
+          return;
+        }
+
+        // If email matches, proceed with registration
+        const response = await axios.post('/api/users/register', formDataObj, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const { accessToken, refreshToken } = response.data;
+        
+        // Remove existing cookies
+        Cookies.remove('accessToken');
+        Cookies.remove('refreshToken');
+        
+        // Set cookies with 30-day expiration
+        Cookies.set('accessToken', accessToken, {
+          path: '/',
+          expires: 30 // 30 days
+        });
+        
+        Cookies.set('refreshToken', refreshToken, {
+          path: '/',
+          expires: 30 // 30 days
+        });
+        
+        // Clear saved form data after successful registration
+        sessionStorage.removeItem(FORM_DATA_KEY);
+        
+        toast({
+          title: "Registration successful",
+          description: "Welcome to IIITMarket!",
+        });
+        
+        navigate('/profile');
+        
+      } catch (error) {
+        console.error('Registration error:', error);
+        toast({
+          title: "Registration failed",
+          description: error.response?.data?.message || "Something went wrong",
+          variant: "destructive",
+        });
+        navigate("/register");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Handle CAS callback
+    const ticket = new URLSearchParams(location.search).get("ticket");
+    if (ticket && location.pathname === "/register/callback") {
+      validateAndRegister(ticket);
+    }
+  }, [location, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const value = e.target.type === 'number' ? Number(e.target.value) : e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      const response = await axios.post('/api/users/register', formData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      console.log("Response:", response.data);
-
-      const { accessToken, refreshToken } = response.data;
-      
-            Cookies.remove('accessToken'); // Clear existing
-            Cookies.remove('refreshToken');
-      
-            
-            Cookies.set('accessToken', accessToken, {
-              path: '/'
-            });
-            
-            Cookies.set('refreshToken', refreshToken, {
-              path: '/'
-            });
-            
-            // Verify cookies were set
-            const storedAccessToken = Cookies.get('accessToken');
-            // console.log("Stored access token:", storedAccessToken);
-            
-            if (!storedAccessToken) {
-              throw new Error('Failed to set cookies');
-            }
-      
-      toast({
-        title: "Registration successful",
-        description: "Please login to continue",
-      });
-      
-      navigate('/login');
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description:"Something went wrong",
-        variant: "destructive",
-      });
-    }
+    // Save form data before redirecting
+    sessionStorage.setItem(FORM_DATA_KEY, JSON.stringify(formData));
+    
+    // Redirect to CAS login
+    const casUrl = `${CAS_LOGIN_URL}?service=${encodeURIComponent(SERVICE_URL)}`;
+    window.location.href = casUrl;
   };
 
   const nextStep = () => setStep(step + 1);
   const prevStep = () => setStep(step - 1);
 
-  const renderStepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      {[1, 2, 3].map((s) => (
-        <div key={s} className="flex items-center">
+  const renderStepIndicator = () => {
+    return (
+      <div className="flex justify-between mb-8">
+        {[1, 2, 3].map((num) => (
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              s === step
-                ? "bg-[#99B898] text-white"
-                : s < step
-                ? "bg-[#99B898]/20 text-[#99B898]"
-                : "bg-gray-100 text-gray-400"
+            key={num}
+            className={`flex items-center ${
+              num !== 3 ? "flex-1" : ""
             }`}
           >
-            {s < step ? <CheckCircle2 className="w-5 h-5" /> : s}
-          </div>
-          {s < 3 && (
             <div
-              className={`w-16 h-0.5 ${
-                s < step ? "bg-[#99B898]" : "bg-gray-200"
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step >= num
+                  ? "bg-[#99B898] text-white"
+                  : "bg-gray-200 text-gray-400"
               }`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
+            >
+              {step > num ? (
+                <CheckCircle2 className="h-5 w-5" />
+              ) : (
+                num
+              )}
+            </div>
+            {num !== 3 && (
+              <div
+                className={`flex-1 h-1 mx-2 ${
+                  step > num ? "bg-[#99B898]" : "bg-gray-200"
+                }`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+          <>
+            <div className="space-y-4">
+              <div>
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
                   id="firstName"
@@ -169,10 +208,9 @@ const Register = () => {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   required
-                  className="border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                 />
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input
                   id="lastName"
@@ -180,82 +218,80 @@ const Register = () => {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   required
-                  className="border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                 />
               </div>
             </div>
-          </div>
+          </>
         );
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#4A5859]" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
-                  placeholder="Enter your email"
-                />
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="pl-10"
+                    required
+                  />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="pl-10"
+                    required
+                  />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#4A5859]" />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  className="pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
-                  placeholder="Create a password"
-                />
-              </div>
-            </div>
-          </div>
+          </>
         );
       case 3:
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+          <>
+            <div className="space-y-4">
+              <div>
                 <Label htmlFor="age">Age</Label>
                 <Input
                   id="age"
                   name="age"
                   type="number"
-                  min="18"
                   value={formData.age}
                   onChange={handleInputChange}
                   required
-                  className="border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                 />
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="contactNumber">Contact Number</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#4A5859]" />
                   <Input
                     id="contactNumber"
                     name="contactNumber"
+                    type="tel"
                     value={formData.contactNumber}
                     onChange={handleInputChange}
+                    className="pl-10"
                     required
-                    className="pl-10 border-[#E8B4A2]/20 focus:border-[#99B898] focus:ring-[#99B898]"
                   />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 </div>
               </div>
             </div>
-          </div>
+          </>
         );
       default:
         return null;
@@ -304,8 +340,19 @@ const Register = () => {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button type="submit" disabled={registerMutation.isPending}>
-                {registerMutation.isPending ? "Registering..." : "Register"}
+              <Button
+                type="submit"
+                className="bg-[#99B898] hover:bg-[#7a9479] text-white ml-auto"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Register"
+                )}
               </Button>
             )}
           </div>

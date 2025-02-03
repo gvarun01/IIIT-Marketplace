@@ -26,7 +26,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/login/callback" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register/callback" element={<Register />} />
           <Route path="/" element={<Index />} />
           
           <Route path="/profile" element={

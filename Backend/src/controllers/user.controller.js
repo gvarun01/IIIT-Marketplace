@@ -5,41 +5,165 @@ import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import axios from "axios";
+import xml2js from 'xml2js';
 
 const cookieOptions = {
   secure: true,
   sameSite: 'None',
 };
 
+const casLogin = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  // Verify email domain
+  if (!email.endsWith('iiit.ac.in')) {
+    throw new ApiError(403, "Only IIIT email addresses are allowed");
+  }
+
+  const user = await User.findOne({ email });
+  
+  if (!user) {
+    throw new ApiError(404, "No account found with this email. Please register first.");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .json(
+      new ApiResponse(
+        200,
+        { user: loggedInUser, accessToken, refreshToken },
+        "User logged in successfully via CAS"
+      )
+    );
+});
+
+// In validateCasTicket controller:
+const validateCasTicket = asyncHandler(async (req, res) => {
+  const { ticket, service } = req.body;
+  
+  if (!ticket || !service) {
+    throw new ApiError(400, "Ticket and service URL are required");
+  }
+
+  console.log("Starting CAS validation with:");
+  console.log(`Ticket: ${ticket}`);
+  console.log(`Service: ${service}`);
+
+  try {
+    console.log("Making request to CAS server...");
+    // Make request to CAS server to validate ticket
+    const casResponse = await axios.get(`https://login.iiit.ac.in/cas/serviceValidate`, {
+      params: {
+        ticket,
+        service
+      },
+      // Add timeout and additional headers
+      timeout: 10000,
+      headers: {
+        'Accept': 'application/xml, text/xml',
+        'User-Agent': 'Node.js CAS Client'
+      }
+    });
+
+    console.log("CAS server response received:");
+    console.log("Status:", casResponse.status);
+    console.log("Raw response data:", casResponse.data);
+
+    // Use xml2js to parse the XML response
+    const parser = new xml2js.Parser({
+      explicitArray: false,
+      tagNameProcessors: [xml2js.processors.stripPrefix]
+    });
+
+    console.log("Parsing XML response...");
+    const result = await new Promise((resolve, reject) => {
+      parser.parseString(casResponse.data, (err, result) => {
+        if (err) {
+          console.error("XML parsing error:", err);
+          reject(err);
+        } else {
+          console.log("XML parsed successfully");
+          resolve(result);
+        }
+      });
+    });
+
+    console.log('Parsed CAS Response:', JSON.stringify(result, null, 2));
+
+    // Check if authentication was successful
+    if (!result.serviceResponse?.authenticationSuccess) {
+      console.log("Authentication failed - no success response");
+      throw new ApiError(401, "CAS authentication failed");
+    }
+
+    // Extract user information from the parsed XML
+    const authSuccess = result.serviceResponse.authenticationSuccess;
+    console.log("Auth success data:", authSuccess);
+
+    const email = authSuccess.attributes?.['E-Mail'] || 
+                 authSuccess['E-Mail'] || 
+                 authSuccess.user;
+
+    console.log("Extracted email:", email);
+
+    if (!email || !email.endsWith('iiit.ac.in')) {
+      console.log("Invalid email domain:", email);
+      throw new ApiError(403, "Only IIIT email addresses are allowed");
+    }
+
+    console.log("Validation successful, sending response");
+    return res.json({
+      email,
+      message: "CAS verification successful"
+    });
+  } catch (error) {
+    console.error('CAS Validation Error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(401, "CAS verification failed: " + (error.message || 'Unknown error'));
+  }
+});
+
 const registerUser = asyncHandler(async (req, res) => {
-  // get the user data from frontend
-  // validate the user data - not empty
-  // check if the user already exists
-  // if the user does not exist, create a new user
-  // if the user exists, return an error
-  // return the user data
-
-  console.log(req.body);
-
   const { firstName, lastName, email, password, age, contactNumber } = req.body;
+  
   if (
     [firstName, lastName, email, password, age, contactNumber].some(
-      (field) => field.trim() === ""
+      (field) => field?.toString().trim() === ""
     )
   ) {
     throw new ApiError(400, "All fields are required");
   }
 
+  // Verify email domain
+  if (!email.endsWith('iiit.ac.in')) {
+    throw new ApiError(403, "Only IIIT email addresses are allowed");
+  }
+
   const existingUser = await User.findOne({
-    $or: [{ email }, { contactNumber }],
+    $or: [{ email },],
   });
 
   if (existingUser) {
     throw new ApiError(409, "User already exists");
   }
-
-  // const avatarPath = req.file?.path;
-  // const avatar = await uploadOnCloudinary(avatarPath);
 
   const user = await User.create({
     firstName,
@@ -58,9 +182,19 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
-  return res
-    .status(201)
-    .json(new ApiResponse(200, userCreated, "User registered successfully"));
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(userCreated._id);
+
+  // Update user with refresh token
+  await User.findByIdAndUpdate(userCreated._id, {
+    refreshToken
+  });
+
+  return res.status(201).json({
+    accessToken,
+    refreshToken,
+    user: userCreated
+  });
 });
 
 // helper code for generating access and refresh tokens
@@ -370,4 +504,6 @@ export {
   deleteUser,
   getSellerProfile,
   changePassword,
+  validateCasTicket,
+  casLogin,
 };

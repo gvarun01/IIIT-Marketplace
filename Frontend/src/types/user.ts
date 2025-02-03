@@ -10,7 +10,7 @@ interface RegisterUser {
     password: string;
     age: number;
     contactNumber: string;
-    // avatar: string;
+    casTicket?: string;
 }
 
 interface User {
