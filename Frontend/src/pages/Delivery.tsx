@@ -47,8 +47,10 @@ const Delivery = () => {
     const fetchDeliveryOrders = async () => {
       try {
         const token = Cookies.get("accessToken");
+        const userId = Cookies.get("userId"); // Add this line to get userId
+
         const response = await axios.get<{ data: DeliveryOrder[] }>(
-          "/api/orders/deliver",
+          "/api/orders/buyer/${userId}",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -113,7 +115,7 @@ const Delivery = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FDF8F3]">
-      <Navbar />
+      <Navbar isCartAnimating={false} />
       <main className="flex-grow container mx-auto px-4 py-8">
         <ChatButton apiKey="AIzaSyA37unXfqTDlSOdi84mtNeYoeDHR2yWNQM" />
         <h1 className="text-3xl font-bold mb-8 text-[#2A363B]">

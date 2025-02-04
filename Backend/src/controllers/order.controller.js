@@ -167,6 +167,8 @@ const getOrderAsBuyer = asyncHandler(async (req, res) => {
     orders[0].items
   );
 
+  console.log("Orders fetched for buyer:", orders);
+
   if (!orders || orders.length === 0) {
     throw new ApiError(404, "No orders found for this buyer");
   }
