@@ -37,6 +37,14 @@ const truncateText = (text: string, maxLength = 600) => {
   return text.slice(0, maxLength) + " ........."
 }
 
+interface ApiErrorResponse {
+  response?: {
+    data: string;
+    status: number;
+    statusText: string;
+  };
+}
+
 export const ProductInfo = ({
   __id,
   name,
@@ -54,21 +62,32 @@ export const ProductInfo = ({
   const addToCartMutation = useMutation({
     mutationFn: () => addToCart(__id, quantity),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] })
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast({
         title: "Success!",
         description: `${quantity} ${quantity === 1 ? "item" : "items"} added to your cart`,
-      })
-      onAddToCart() // Trigger cart animation
+      });
+      onAddToCart();
     },
-    onError: (error) => {
+    onError: (error: ApiErrorResponse) => {
+      // Extract error message from HTML response
+      const htmlString = error.response?.data;
+      let errorMessage = "Failed to add item to cart";
+      
+      if (htmlString) {
+        const matchResult = htmlString.match(/Error: ([^<]+)/);
+        if (matchResult && matchResult[1]) {
+          errorMessage = matchResult[1].trim();
+        }
+      }
+  
       toast({
-        title: "Error",
-        description: "Failed to add to cart",
+        title: "Cannot Add to Cart",
+        description: errorMessage,
         variant: "destructive",
-      })
+      });
     },
-  })
+  });
 
   const handleAddToCart = () => {
     setIsAdding(true)

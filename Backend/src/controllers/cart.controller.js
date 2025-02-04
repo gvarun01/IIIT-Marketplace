@@ -23,6 +23,10 @@ const addToCart = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Item not found");
   }
 
+  if (item.sellerId._id.toString() === user._id.toString()) {
+    throw new ApiError(403, "You cannot add your own item to cart");
+  }
+
   // Check if the item already exists in the user's cart
   const cartItem = user.cart.find(
     (cartEntry) => cartEntry.itemId.toString() === itemId
@@ -120,4 +124,13 @@ const clearCart = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, [], "Cart cleared successfully."));
 });
 
-export { addToCart, getCart, removeFromCart, clearCart, updateCartQuantity };
+const getCartCount = asyncHandler(async (req, res) => {
+  const user = req.user;
+  
+  // Calculate total quantity of items in cart
+  const totalCount = user.cart.reduce((sum, item) => sum + item.quantity, 0);
+  
+  res.status(200).json(new ApiResponse(200, { count: totalCount }, "Cart count fetched successfully"));
+});
+
+export { addToCart, getCart, removeFromCart, clearCart, updateCartQuantity, getCartCount };
