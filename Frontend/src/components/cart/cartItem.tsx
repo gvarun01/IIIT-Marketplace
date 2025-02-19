@@ -55,7 +55,7 @@ export const CartItem = ({
               <Plus className="h-3 w-3" />
             </Button>
           </div>
-          <p className="font-medium">${price}</p>
+          <p className="font-medium">₹{price}</p>
         </div>
       </div>
     </div>

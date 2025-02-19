@@ -16,14 +16,14 @@ import type { Order } from "@/types/order"
 import { ChatButton } from "@/components/chat/ChatButton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import type React from "react" // Added import for React
+import type React from "react"
 
 const getOTP = (transactionId: string): string | null => {
   const otps = JSON.parse(localStorage.getItem("orderOTPs") || "{}")
   return otps[transactionId] || null
 }
 
-const DEFAULT_AVATAR = "https://img.freepik.com/free-psd/3d-render-avatar-character_23-2150611701.jpg" // Replace with your default avatar path
+const DEFAULT_AVATAR = "https://img.freepik.com/free-psd/3d-render-avatar-character_23-2150611701.jpg"
 
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null)
@@ -204,9 +204,6 @@ const Profile = () => {
       const formData = new FormData()
       formData.append("avatar", file)
 
-      console.log("Uploading avatar...")
-      console.log("File:", file)
-
       try {
         const token = Cookies.get("accessToken")
         const response = await axios.put("/api/users/avatar", formData, {
@@ -215,7 +212,6 @@ const Profile = () => {
             "Content-Type": "multipart/form-data",
           },
         })
-        console.log(response.data)
         setAvatarUrl(response.data.data.avatar)
         toast({
           title: "Success",
@@ -231,6 +227,37 @@ const Profile = () => {
       }
     }
   }
+
+  const pendingSellerOrders = sellerOrders.filter(order => order.status === "Pending")
+  const completedSellerOrders = sellerOrders.filter(order => order.status === "Completed")
+
+  const renderOrderCard = (order: Order) => (
+    <Card key={order.transactionId} className="border-0 bg-white/50 backdrop-blur-sm">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="font-semibold text-[#2A363B]">
+              Transaction ID: {order.transactionId}
+            </p>
+            <p className="text-sm text-[#4A5859]">
+              Items: {order.items.map((item) => item.itemId.name).join(", ")}
+            </p>
+            <p className="text-sm text-[#4A5859]">
+              Purchased on {new Date(order.createdAt).toLocaleDateString()}
+            </p>
+            <div className={`mt-1 inline-block px-2 py-1 rounded-full text-sm ${
+              order.status === "Pending"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-green-100 text-green-800"
+            }`}>
+              {order.status}
+            </div>
+          </div>
+          <p className="font-bold text-[#2A363B]">₹{order.totalAmount.toFixed(2)}</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
 
   return (
     <>
@@ -492,39 +519,49 @@ const Profile = () => {
                   </TabsContent>
 
                   <TabsContent value="selling">
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <div className="flex items-center gap-2">
                         <List className="h-5 w-5 text-[#99B898]" />
                         <h3 className="text-lg font-medium text-[#2A363B]">Sales History</h3>
                       </div>
-                      <Separator className="bg-[#E8B4A2]/20" />
+                      
                       {isSellerOrdersLoading ? (
                         <div className="text-center py-4">Loading sales history...</div>
                       ) : sellerOrders.length === 0 ? (
                         <div className="text-center py-4">No sales history available.</div>
                       ) : (
-                        <div className="space-y-4">
-                          {sellerOrders.map((order) => (
-                            <Card key={order.transactionId} className="border-0 bg-white/50 backdrop-blur-sm">
-                              <CardContent className="p-4">
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <p className="font-semibold text-[#2A363B]">
-                                      Transaction ID: {order.transactionId}
-                                    </p>
-                                    <p className="text-sm text-[#4A5859]">
-                                      Items: {order.items.map((item) => item.itemId.name).join(", ")}
-                                    </p>
-                                    <p className="text-sm text-[#4A5859]">
-                                      Purchased on {new Date(order.createdAt).toLocaleDateString()}
-                                    </p>
-                                    <p className="text-sm text-[#4A5859]">Status: {order.status}</p>
-                                  </div>
-                                  <p className="font-bold text-[#2A363B]">₹{order.totalAmount.toFixed(2)}</p>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                        <div className="space-y-6">
+                          {/* Pending Orders Section */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
+                              <h4 className="font-medium text-[#2A363B]">Pending Orders</h4>
+                            </div>
+                            <Separator className="bg-[#E8B4A2]/20" />
+                            {pendingSellerOrders.length === 0 ? (
+                              <p className="text-sm text-gray-500 py-2">No pending orders</p>
+                            ) : (
+                              <div className="space-y-4">
+                                {pendingSellerOrders.map(renderOrderCard)}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Completed Orders Section */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 rounded-full bg-green-400"></div>
+                              <h4 className="font-medium text-[#2A363B]">Completed Orders</h4>
+                            </div>
+                            <Separator className="bg-[#E8B4A2]/20" />
+                            {completedSellerOrders.length === 0 ? (
+                              <p className="text-sm text-gray-500 py-2">No completed orders</p>
+                            ) : (
+                              <div className="space-y-4">
+                                {completedSellerOrders.map(renderOrderCard)}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -541,4 +578,3 @@ const Profile = () => {
 }
 
 export default Profile
-

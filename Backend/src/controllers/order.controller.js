@@ -179,6 +179,7 @@ const getOrderAsBuyer = asyncHandler(async (req, res) => {
 });
 
 const getOrderAsSeller = asyncHandler(async (req, res) => {
+  console.log("Fetching orders for seller:", req.user._id);
   const sellerId = req.user._id;
 
   const sellerItems = await Item.find({ sellerId }).distinct("_id");
@@ -201,6 +202,8 @@ const getOrderAsSeller = asyncHandler(async (req, res) => {
       },
     });
 
+    // console.log("Orders fetched for seller:", orders);
+
   if (!orders || orders.length === 0) {
     throw new ApiError(404, "No orders found for this seller");
   }
@@ -212,6 +215,8 @@ const getOrderAsSeller = asyncHandler(async (req, res) => {
       (item) => item.itemId.sellerId._id.toString() === sellerId.toString()
     ),
   }));
+
+  console.log("Filtered orders for seller:", filteredOrders);
 
   return res
     .status(200)
