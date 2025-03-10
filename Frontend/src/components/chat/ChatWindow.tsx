@@ -37,8 +37,65 @@ export const ChatWindow = ({ isOpen, onClose, apiKey }: ChatWindowProps) => {
     scrollToBottom();
   }, [messages]);
 
-  const generateGeminiResponse = async (userInput: string) => {
+  // In your getRAGResponse function, modify to try multiple ports
+const getRAGResponse = async (userInput: string) => {
+  // Ports to try in order
+  const ports = [5001, 5002, 5003, 3001, 3002, 8080];
+  
+  // Store the successful port for future use
+  const successPort = localStorage.getItem('ragServicePort') || null;
+  
+  // If we have a previously successful port, try it first
+  if (successPort) {
+    ports.unshift(parseInt(successPort, 10));
+  }
+  
+  // Try each port until one works
+  for (const port of ports) {
     try {
+      const conversationHistory = messages
+        .slice(1) // Skip the welcome message
+        .map((m) => (m.isBot ? "Assistant: " : "User: ") + m.text)
+        .join("\n");
+
+      const response = await fetch(`http://localhost:${port}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: userInput,
+          conversationHistory: conversationHistory,
+          apiKey: apiKey
+        }),
+        // Short timeout to quickly try the next port
+        signal: AbortSignal.timeout(2000)
+      });
+
+      if (response.ok) {
+        // Store successful port for future use
+        localStorage.setItem('ragServicePort', port.toString());
+        const data = await response.json();
+        return data.response;
+      }
+    } catch (error) {
+      console.log(`Failed to connect to RAG service on port ${port}`);
+      // Continue to next port
+    }
+  }
+  
+  // If all ports fail, fall back to Gemini API
+  console.error("Error calling RAG service: All ports failed");
+  return fallbackToGemini(userInput);
+};
+
+  const fallbackToGemini = async (userInput: string) => {
+    try {
+      const conversationContext = messages
+        .slice(1) // Skip the welcome message
+        .map((m) => (m.isBot ? "Assistant: " : "User: ") + m.text)
+        .join("\n");
+        
       const response = await fetch(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
           apiKey,
@@ -53,9 +110,7 @@ export const ChatWindow = ({ isOpen, onClose, apiKey }: ChatWindowProps) => {
                 parts: [
                   {
                     text: `You are a helpful customer support assistant for IIIT Buy-Sell website. 
-                    Previous conversation context: ${messages
-                      .map((m) => (m.isBot ? "Assistant: " : "User: ") + m.text)
-                      .join("\n")}
+                    Previous conversation context: ${conversationContext}
                     User: ${userInput}
                     
                     Respond in a helpful and friendly manner, keeping in mind the context of our IIIT Buy-Sell platform.`,
@@ -74,7 +129,7 @@ export const ChatWindow = ({ isOpen, onClose, apiKey }: ChatWindowProps) => {
       const data = await response.json();
       return data.candidates[0].content.parts[0].text;
     } catch (error) {
-      console.error("Error calling Gemini API:", error);
+      console.error("Error in fallback to Gemini API:", error);
       return "I apologize, but I'm having trouble connecting right now. Please try again later.";
     }
   };
@@ -93,7 +148,7 @@ export const ChatWindow = ({ isOpen, onClose, apiKey }: ChatWindowProps) => {
     setInput("");
     setIsLoading(true);
 
-    const response = await generateGeminiResponse(input.trim());
+    const response = await getRAGResponse(input.trim());
     
     setMessages((prev) => [
       ...prev,
