@@ -2,6 +2,7 @@
 
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
+[![DeepScan grade](https://deepscan.io/api/teams/26743/projects/29340/branches/942612/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=26743&pid=29340&bid=942612)
 
 A dedicated Buy-Sell platform exclusively for the IIIT Community, developed using the MERN stack (MongoDB, Express.js, React, Node.js).
 
