@@ -19,7 +19,8 @@ import { ChatButton } from "@/components/chat/ChatButton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Package, CheckCircle, Truck, Clock, Calendar, User, Box, DollarSign,IndianRupee, Loader2 } from "lucide-react"
+// Removed DollarSign from lucide-react
+import { Package, CheckCircle, Truck, Clock, Calendar, User, Box, IndianRupee, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ApiError {

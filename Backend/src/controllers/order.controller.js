@@ -160,18 +160,21 @@ const getOrderAsBuyer = asyncHandler(async (req, res) => {
       },
     });
 
-  console.log(
-    "Orders fetched for buyer:",
-    orders,
-    "with items ",
-    orders[0].items
-  );
-
-  console.log("Orders fetched for buyer:", orders);
-
   if (!orders || orders.length === 0) {
+    console.log("No orders found for buyer:", userId);
     throw new ApiError(404, "No orders found for this buyer");
   }
+
+  // Now that we know orders exist and is not empty, we can safely log details.
+  console.log(
+    `Orders fetched for buyer ${userId}:`,
+    orders.length,
+    "order(s). First order items (if any):",
+    orders[0].items // This is safe due to the check above
+  );
+  // The following log is a bit redundant if orders is large, but kept for consistency with original code's intent.
+  // For production, consider logging only specific fields or counts.
+  console.log("Full orders details for buyer:", orders);
 
   return res
     .status(200)

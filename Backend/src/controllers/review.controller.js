@@ -83,15 +83,26 @@ const getSellerReviews = asyncHandler(async (req, res) => {
       }
     });
 
-    seller.rating = seller.reviews.reduce((sum, review) => sum + review.rating, 0) / seller.reviews.length;
-    seller.totalReviews = seller.reviews.length;
-    await seller.save();
-
-  
-  
   if (!seller) {
+    // This check correctly prevents accessing properties of null 'seller'
     throw new ApiError(404, "Seller not found.");
   }
+
+  // It's safe to access seller.reviews here due to the check above.
+  // However, ensure reviews array is not empty before calculating average.
+  if (seller.reviews && seller.reviews.length > 0) {
+    seller.rating = seller.reviews.reduce((sum, review) => sum + review.rating, 0) / seller.reviews.length;
+  } else {
+    seller.rating = 0; // Default rating if no reviews
+  }
+  seller.totalReviews = seller.reviews ? seller.reviews.length : 0;
+
+  // The DeepScan issue was likely about potential access before the `!seller` check,
+  // or about operations like `.reduce` on an empty `seller.reviews` if not handled.
+  // The original code already had the main null check for seller.
+  // The adjustment here is to make calculations safer, especially for `reduce`.
+
+  await seller.save();
 
   res.status(200)
     .json(new ApiResponse(200, seller.reviews, "Seller reviews fetched successfully."));

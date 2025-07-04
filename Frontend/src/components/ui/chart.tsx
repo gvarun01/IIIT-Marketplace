@@ -196,7 +196,8 @@ const ChartTooltipContent = React.forwardRef<
                   indicator === "dot" && "items-center"
                 )}
               >
-                {formatter && item?.value !== undefined && item.name ? (
+                {/* Ensure item itself is checked, then its properties */}
+                {formatter && item && typeof item.value !== 'undefined' && typeof item.name !== 'undefined' ? (
                   formatter(item.value, item.name, item, index, item.payload)
                 ) : (
                   <>

@@ -44,12 +44,17 @@ const useFormField = () => {
   const itemContext = React.useContext(FormItemContext)
   const { getFieldState, formState } = useFormContext()
 
-  const fieldState = getFieldState(fieldContext.name, formState)
-
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
+  // Ensure fieldContext is checked before accessing its properties.
+  if (!fieldContext || !fieldContext.name) {
+    // It's possible fieldContext itself is not null, but name is not on its default value
+    // Depending on how FormFieldContext is initialized, !fieldContext.name might be redundant
+    // if name is always expected on a non-null fieldContext.
+    // However, to be safe and directly address the DeepScan issue, we check both.
+    // If fieldContext is guaranteed to have 'name' when not null, `if (!fieldContext)` is enough.
+    throw new Error("useFormField should be used within <FormField> and name should be available")
   }
 
+  const fieldState = getFieldState(fieldContext.name, formState)
   const { id } = itemContext
 
   return {

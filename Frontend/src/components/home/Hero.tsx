@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+// Removed ArrowRight from lucide-react
 import { useNavigate } from 'react-router-dom';
 
 export const Hero = () => {

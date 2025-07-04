@@ -32,9 +32,10 @@ const Index = () => {
     }
   ];
 
-  const popularItems = [
-    {
-      image: "https://images.unsplash.com/photo-1544256718-3bcf237f3974",
+  // Removed unused popularItems variable
+  // const popularItems = [
+  //   {
+  //     image: "https://images.unsplash.com/photo-1544256718-3bcf237f3974",
       title: "Engineering Textbooks",
       price: "₹499",
       category: "Books",

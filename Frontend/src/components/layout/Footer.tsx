@@ -1,5 +1,6 @@
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+// Removed unused Input and Button imports from @/components/ui
+// import { Input } from "../ui/input";
+// import { Button } from "../ui/button";
 
 export const Footer = () => {
   return (

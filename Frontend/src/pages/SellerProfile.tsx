@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
-  CardDescription,
+  // CardDescription, // Removed CardDescription
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,7 +27,7 @@ import { User as UserType } from "@/types/user";
 // import { Review } from "@/types/review";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { set } from "date-fns";
+// Removed set from "date-fns";
 
 export interface Review {
     _id: string;

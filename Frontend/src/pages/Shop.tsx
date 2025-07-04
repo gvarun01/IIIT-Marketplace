@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from 'react-router-dom';
 import axios from "axios";
 import { Item } from "@/types/item";
-import { Filter, SlidersHorizontal, X } from "lucide-react";
+import { X } from "lucide-react"; // Removed Filter, SlidersHorizontal
 import {
   Select,
   SelectContent,

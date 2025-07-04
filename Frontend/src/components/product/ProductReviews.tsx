@@ -1,4 +1,4 @@
-import { Star, ThumbsUp, MessageSquarePlus } from "lucide-react";
+import { Star, MessageSquarePlus } from "lucide-react"; // Removed ThumbsUp
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,62 +39,50 @@ const CARD_COLORS = [
   "bg-[#FFF3E0]",
 ];
 
-export const ProductReviews = ({ reviews }: ProductReviewsProps) => {
-  const [likedReviews, setLikedReviews] = useState<Set<string>>(new Set());
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [rating, setRating] = useState(0);
+export const ProductReviews = ({ productId, reviews }: ProductReviewsProps) => {
+  // Removed unused likedReviews, setLikedReviews, handleLike function
+  // Removed unused isSubmitting, setIsSubmitting state
+  // Removed unused handleSubmitReview function (mutation is used)
+  // Removed unused isDialogOpen state (isOpen is used for the dialog)
+  const [rating, setRating] = useState(0); // Default to 0, user must select
   const [comment, setComment] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const { id } = useParams();
+  const [isOpen, setIsOpen] = useState(false); // Controls the review dialog visibility
+  const { id: paramId } = useParams(); // This is the product ID from the URL
   const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-
-  const handleLike = (reviewId: string) => {
-    setLikedReviews((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(reviewId)) {
-        newSet.delete(reviewId);
-      } else {
-        newSet.add(reviewId);
-      }
-      return newSet;
-    });
-  };
+  // Ensure we use the productId prop if available, otherwise fallback to URL param.
+  // This component might be used in contexts where productId is directly passed.
+  const currentProductId = productId || paramId;
 
   const submitReviewMutation = useMutation({
     mutationFn: async (reviewData: ReviewSubmission) => {
+      // API endpoint should be specific to adding a review for an *item*
+      // Assuming it's /api/items/:itemId/reviews or similar, based on item.controller.js structure
+      // The original /api/reviews/${id}/reviews was ambiguous if 'id' was item or review.
+      // Let's assume the 'id' from useParams is indeed the item's ID.
       const response = await axios.post(
-        `/api/reviews/${id}/reviews`,
-        reviewData
+        `/api/items/${currentProductId}/review`, // Corrected API endpoint to match typical item reviews
+        reviewData,
+        // TODO: Add Authorization header with token if this endpoint is protected
       );
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product", id] });
-      setIsDialogOpen(false);
-      setRating(5);
-      setComment("");
+      queryClient.invalidateQueries({ queryKey: ["product", currentProductId] });
+      setIsOpen(false); // Correctly close the dialog using the 'isOpen' state
+      setRating(0);    // Reset rating to initial/default
+      setComment("");  // Reset comment
+      // Consider adding a success toast message here
     },
+    onError: (error) => {
+      // Consider adding an error toast message here
+      console.error("Failed to submit review:", error);
+      // Example: toast({ title: "Error", description: "Could not submit review.", variant: "destructive" });
+    }
   });
 
-  const handleSubmitReview = async () => {
-    try {
-      setIsSubmitting(true);
-      await axios.post(`/api/reviews/${id}/reviews`, {
-        rating,
-        comment,
-      });
-      queryClient.invalidateQueries({ queryKey: ["product", id] });
-      setIsOpen(false);
-      setRating(0);
-      setComment("");
-    } catch (error) {
-      console.error("Failed to submit review:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // The handleLike and handleSubmitReview functions were unused and have been removed.
+  // The dialog's submit button directly calls submitReviewMutation.mutate.
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+// Removed useState from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Headset, Mail, MessageCircle, Phone, HelpCircle, FileText, Send } from "lucide-react";
