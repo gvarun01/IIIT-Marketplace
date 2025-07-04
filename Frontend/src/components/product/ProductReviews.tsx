@@ -1,4 +1,4 @@
-import { Star, ThumbsUp, MessageSquarePlus } from "lucide-react";
+import { Star, MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,18 +49,18 @@ export const ProductReviews = ({ reviews }: ProductReviewsProps) => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-
-  const handleLike = (reviewId: string) => {
-    setLikedReviews((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(reviewId)) {
-        newSet.delete(reviewId);
-      } else {
-        newSet.add(reviewId);
-      }
-      return newSet;
-    });
-  };
+  // Removed unused handleLike function:
+  // const handleLike = (reviewId: string) => {
+  //   setLikedReviews((prev) => {
+  //     const newSet = new Set(prev);
+  //     if (newSet.has(reviewId)) {
+  //       newSet.delete(reviewId);
+  //     } else {
+  //       newSet.add(reviewId);
+  //     }
+  //     return newSet;
+  //   });
+  // };
 
   const submitReviewMutation = useMutation({
     mutationFn: async (reviewData: ReviewSubmission) => {
@@ -78,23 +78,24 @@ export const ProductReviews = ({ reviews }: ProductReviewsProps) => {
     },
   });
 
-  const handleSubmitReview = async () => {
-    try {
-      setIsSubmitting(true);
-      await axios.post(`/api/reviews/${id}/reviews`, {
-        rating,
-        comment,
-      });
-      queryClient.invalidateQueries({ queryKey: ["product", id] });
-      setIsOpen(false);
-      setRating(0);
-      setComment("");
-    } catch (error) {
-      console.error("Failed to submit review:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Removed unused handleSubmitReview function:
+  // const handleSubmitReview = async () => {
+  //   try {
+  //     setIsSubmitting(true);
+  //     await axios.post(`/api/reviews/${id}/reviews`, {
+  //       rating,
+  //       comment,
+  //     });
+  //     queryClient.invalidateQueries({ queryKey: ["product", id] });
+  //     setIsOpen(false);
+  //     setRating(0);
+  //     setComment("");
+  //   } catch (error) {
+  //     console.error("Failed to submit review:", error);
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   return (
     <div className="space-y-6">

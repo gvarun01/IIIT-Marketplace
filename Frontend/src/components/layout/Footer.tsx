@@ -1,6 +1,3 @@
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-
 export const Footer = () => {
   return (
     <footer className="bg-[#2A363B] text-white pt-12 pb-6">

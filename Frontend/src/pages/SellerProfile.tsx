@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Star, Mail, Phone, User } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -27,7 +25,6 @@ import { User as UserType } from "@/types/user";
 // import { Review } from "@/types/review";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { set } from "date-fns";
 
 export interface Review {
     _id: string;
@@ -50,7 +47,6 @@ export interface Review {
 
 const SellerProfile = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
@@ -138,9 +134,9 @@ const SellerProfile = () => {
   console.log("Seller:", seller);
   console.log("Reviews:", reviews);
 
-  const averageRating = reviews.length
-    ? (reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length).toFixed(1)
-    : "No ratings yet";
+  // const averageRating = reviews.length
+  //   ? (reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length).toFixed(1)
+  //   : "No ratings yet";
 
 
 

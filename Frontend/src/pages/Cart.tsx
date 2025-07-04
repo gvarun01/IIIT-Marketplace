@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartItem } from "@/components/cart/cartItem";
@@ -51,10 +50,10 @@ const saveOTP = (transactionId: string, otp: string) => {
   localStorage.setItem("orderOTPs", JSON.stringify(otps));
 };
 
-const getOTP = (transactionId: string): string | null => {
-  const otps = JSON.parse(localStorage.getItem("orderOTPs") || "{}");
-  return otps[transactionId] || null;
-};
+// const getOTP = (transactionId: string): string | null => {
+//   const otps = JSON.parse(localStorage.getItem("orderOTPs") || "{}");
+//   return otps[transactionId] || null;
+// };
 
 const fetchCart = async () => {
   const token = Cookies.get("accessToken");
@@ -103,7 +102,7 @@ const clearCart = async () => {
 };
 
 const Cart = () => {
-  const { data: cartData, isLoading } = useQuery({
+  const { data: cartData } = useQuery({
     queryKey: ["cart"],
     queryFn: fetchCart,
   });

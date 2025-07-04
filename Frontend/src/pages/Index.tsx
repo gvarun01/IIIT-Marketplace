@@ -32,36 +32,36 @@ const Index = () => {
     }
   ];
 
-  const popularItems = [
-    {
-      image: "https://images.unsplash.com/photo-1544256718-3bcf237f3974",
-      title: "Engineering Textbooks",
-      price: "₹499",
-      category: "Books",
-      gradient: "from-[#FEC6A1] to-[#FDE1D3]"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1527814050087-3793815479db",
-      title: "Scientific Calculator",
-      price: "₹899",
-      category: "Electronics",
-      gradient: "from-[#E5DEFF] to-[#D3E4FD]"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1542496658-e33a6d0d50f6",
-      title: "Study Desk Lamp",
-      price: "₹699",
-      category: "Home",
-      gradient: "from-[#FFDEE2] to-[#FDE1D3]"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
-      title: "Wireless Headphones",
-      price: "₹1,299",
-      category: "Electronics",
-      gradient: "from-[#F2FCE2] to-[#FEF7CD]"
-    }
-  ];
+  // const popularItems = [
+  //   {
+  //     image: "https://images.unsplash.com/photo-1544256718-3bcf237f3974",
+  //     title: "Engineering Textbooks",
+  //     price: "₹499",
+  //     category: "Books",
+  //     gradient: "from-[#FEC6A1] to-[#FDE1D3]"
+  //   },
+  //   {
+  //     image: "https://images.unsplash.com/photo-1527814050087-3793815479db",
+  //     title: "Scientific Calculator",
+  //     price: "₹899",
+  //     category: "Electronics",
+  //     gradient: "from-[#E5DEFF] to-[#D3E4FD]"
+  //   },
+  //   {
+  //     image: "https://images.unsplash.com/photo-1542496658-e33a6d0d50f6",
+  //     title: "Study Desk Lamp",
+  //     price: "₹699",
+  //     category: "Home",
+  //     gradient: "from-[#FFDEE2] to-[#FDE1D3]"
+  //   },
+  //   {
+  //     image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
+  //     title: "Wireless Headphones",
+  //     price: "₹1,299",
+  //     category: "Electronics",
+  //     gradient: "from-[#F2FCE2] to-[#FEF7CD]"
+  //   }
+  // ];
 
   const accessToken = Cookies.get("accessToken");
   console.log("Access token:", accessToken);
