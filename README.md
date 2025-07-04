@@ -1,7 +1,9 @@
 # IIIT-Marketplace
 
 ![Tech Stack](https://img.shields.io/badge/Tech-MERN%20+%20TypeScript%20+%20Tailwind%20CSS-blueviolet)
-![Status](https://img.shields.io/badge/Status-Active%20Development-green)
+![Status](https://img.shields.io/badge/Status-Maintained-blue)
+![Contributions](https://img.shields.io/badge/Contributions-Welcome-orange)
+[![DeepScan grade](https://deepscan.io/api/teams/26743/projects/29340/branches/958386/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=26743&pid=29340&bid=958386)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 IIIT-Marketplace is a dedicated e-commerce platform designed exclusively for the IIIT community. It provides a secure and user-friendly environment for students and members to buy, sell, and trade goods and services. This project aims to streamline C2C commerce within the IIIT network, offering a feature-rich alternative to informal marketplace activities on messaging platforms.
