@@ -2,7 +2,6 @@ import { Navigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 
 interface TokenPayload {
   exp: number;

@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,7 +26,6 @@ import { User as UserType } from "@/types/user";
 // import { Review } from "@/types/review";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { set } from "date-fns";
 
 export interface Review {
     _id: string;
@@ -50,7 +48,6 @@ export interface Review {
 
 const SellerProfile = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);

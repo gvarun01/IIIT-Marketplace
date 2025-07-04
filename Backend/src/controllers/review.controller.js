@@ -83,18 +83,20 @@ const getSellerReviews = asyncHandler(async (req, res) => {
       }
     });
 
-    seller.rating = seller.reviews.reduce((sum, review) => sum + review.rating, 0) / seller.reviews.length;
-    seller.totalReviews = seller.reviews.length;
-    await seller.save();
-
-  
-  
   if (!seller) {
     throw new ApiError(404, "Seller not found.");
   }
 
+  if (seller.reviews && seller.reviews.length > 0) {
+    seller.rating = seller.reviews.reduce((sum, review) => sum + review.rating, 0) / seller.reviews.length;
+  } else {
+    seller.rating = 0; // Or some other default/NaN handling
+  }
+  seller.totalReviews = seller.reviews ? seller.reviews.length : 0;
+  await seller.save();
+
   res.status(200)
-    .json(new ApiResponse(200, seller.reviews, "Seller reviews fetched successfully."));
+    .json(new ApiResponse(200, seller.reviews || [], "Seller reviews fetched successfully."));
 });
 
 const addSellerReview = asyncHandler(async (req, res) => {

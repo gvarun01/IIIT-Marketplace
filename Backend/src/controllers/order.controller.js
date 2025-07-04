@@ -160,17 +160,18 @@ const getOrderAsBuyer = asyncHandler(async (req, res) => {
       },
     });
 
-  console.log(
-    "Orders fetched for buyer:",
-    orders,
-    "with items ",
-    orders[0].items
-  );
-
   console.log("Orders fetched for buyer:", orders);
 
   if (!orders || orders.length === 0) {
     throw new ApiError(404, "No orders found for this buyer");
+  }
+
+  // Safely log items only if orders exist and have entries
+  if (orders.length > 0 && orders[0] && orders[0].items) {
+    console.log(
+      "First order items for buyer:",
+      orders[0].items
+    );
   }
 
   return res

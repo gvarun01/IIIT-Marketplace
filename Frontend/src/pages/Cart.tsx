@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartItem } from "@/components/cart/cartItem";
@@ -103,7 +102,7 @@ const clearCart = async () => {
 };
 
 const Cart = () => {
-  const { data: cartData, isLoading } = useQuery({
+  const { data: cartData } = useQuery({
     queryKey: ["cart"],
     queryFn: fetchCart,
   });
