@@ -152,15 +152,6 @@ IIIT-Marketplace is a dedicated e-commerce platform designed exclusively for the
 
 Open your browser and navigate to the frontend URL (e.g., `http://localhost:5173`) to use the application.
 
-## Screenshots
-
-*(This section can be filled if relevant screenshots are available in the repository. For example: `Backend/public/temp/Screenshot 2025-01-18 022730.png-1737229169326-110932813` could be referenced here if it's a good overview image.)*
-
-To include the screenshot:
-1. Create an `assets/screenshots/` directory in the root of the project.
-2. Move the screenshot from `Backend/public/temp/` to this new directory.
-3. Embed it using Markdown: `![Application Screenshot](assets/screenshots/your_screenshot_name.png)`
-
 ## License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
