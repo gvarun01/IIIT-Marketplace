@@ -135,9 +135,9 @@ const SellerProfile = () => {
   console.log("Seller:", seller);
   console.log("Reviews:", reviews);
 
-  const averageRating = reviews.length
-    ? (reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length).toFixed(1)
-    : "No ratings yet";
+  // const averageRating = reviews.length
+  //   ? (reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length).toFixed(1)
+  //   : "No ratings yet";
 
 
 

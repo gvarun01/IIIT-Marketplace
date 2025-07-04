@@ -50,10 +50,10 @@ const saveOTP = (transactionId: string, otp: string) => {
   localStorage.setItem("orderOTPs", JSON.stringify(otps));
 };
 
-const getOTP = (transactionId: string): string | null => {
-  const otps = JSON.parse(localStorage.getItem("orderOTPs") || "{}");
-  return otps[transactionId] || null;
-};
+// const getOTP = (transactionId: string): string | null => {
+//   const otps = JSON.parse(localStorage.getItem("orderOTPs") || "{}");
+//   return otps[transactionId] || null;
+// };
 
 const fetchCart = async () => {
   const token = Cookies.get("accessToken");
